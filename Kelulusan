@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Kelulusan Kelas XII</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .school-blue { background-color: #1e3a8a; }
+        .school-blue-hover { background-color: #1e40af; }
+        .edit-mode { border-color: #f59e0b !important; background-color: #fffbeb; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header -->
+    <header class="school-blue text-white py-6 shadow-lg">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-2xl md:text-3xl font-bold uppercase tracking-wide">Aplikasi Laporan Kelulusan Kelas XII</h1>
+            <p class="text-blue-200 mt-1">Tahun Pelajaran 2026</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Form Input Section -->
+            <div class="lg:col-span-1">
+                <div id="formContainer" class="bg-white rounded-xl shadow-md p-6 sticky top-8 border-t-4 border-blue-700 transition-all duration-300">
+                    <h2 id="formTitle" class="text-xl font-bold mb-6 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        Input Data Siswa
+                    </h2>
+                    
+                    <form id="graduationForm" class="space-y-4">
+                        <input type="hidden" id="editIndex" value="-1">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Nama Siswa</label>
+                            <input type="text" id="nama" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Masukkan nama lengkap" required>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Kelas</label>
+                                <input type="text" id="kelas" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="XII MIPA 1" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">NIS</label>
+                                <input type="number" id="nis" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="001234" required>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Status Kelulusan</label>
+                            <select id="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" required>
+                                <option value="">-- Pilih Status --</option>
+                                <option value="Lulus">Lulus</option>
+                                <option value="Tidak Lulus">Tidak Lulus</option>
+                                <option value="Pending">Pending</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Catatan</label>
+                            <textarea id="catatan" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Keterangan tambahan..."></textarea>
+                        </div>
+
+                        <div class="pt-4 flex flex-col space-y-2">
+                            <button type="submit" id="btnSubmit" class="school-blue school-blue-hover text-white font-bold py-3 rounded-lg shadow transition transform hover:scale-105 active:scale-95">
+                                Simpan Data
+                            </button>
+                            <button type="button" id="btnReset" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 rounded-lg transition">
+                                Batal / Reset
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div id="statusMessage" class="mt-4 text-center hidden p-3 rounded-lg text-sm font-medium"></div>
+                </div>
+            </div>
+
+            <!-- Dashboard / Rekap Section -->
+            <div class="lg:col-span-2">
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
+                        <p class="text-sm text-gray-500 uppercase font-bold">Lulus</p>
+                        <h3 id="statLulus" class="text-3xl font-bold text-green-600">0</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
+                        <p class="text-sm text-gray-500 uppercase font-bold">Tidak Lulus</p>
+                        <h3 id="statGagal" class="text-3xl font-bold text-red-600">0</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500">
+                        <p class="text-sm text-gray-500 uppercase font-bold">Pending</p>
+                        <h3 id="statPending" class="text-3xl font-bold text-yellow-600">0</h3>
+                    </div>
+                </div>
+
+                <!-- Table Controls -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 flex flex-wrap gap-4 items-center justify-between bg-gray-50">
+                        <div class="flex flex-1 gap-2 min-w-[200px]">
+                            <input type="text" id="searchName" class="w-full px-4 py-2 border rounded-lg text-sm" placeholder="Cari nama atau NIS...">
+                            <select id="filterKelas" class="px-4 py-2 border rounded-lg text-sm">
+                                <option value="">Semua Kelas</option>
+                            </select>
+                        </div>
+                        <button onclick="exportToPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center transition">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"></path></svg>
+                            Export PDF
+                        </button>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left" id="reportTable">
+                            <thead class="bg-gray-50 text-gray-600 uppercase text-xs font-bold border-b">
+                                <tr>
+                                    <th class="px-6 py-4">Nama</th>
+                                    <th class="px-6 py-4">Kelas</th>
+                                    <th class="px-6 py-4">NIS</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-gray-100">
+                                <!-- Data rows go here -->
+                            </tbody>
+                        </table>
+                        <div id="noData" class="p-8 text-center text-gray-400">Belum ada data diinput.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Ganti URL ini dengan URL Web App URL dari Google Apps Script Deployment
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCQREjiZwNMmxtI6IHvQMMjWTr1imIm4vgZBNDu2CnWwKMYSpsk6XSykQzMI1RD636NA/exec"; 
+
+        let allData = [];
+
+        const form = document.getElementById('graduationForm');
+        const formContainer = document.getElementById('formContainer');
+        const formTitle = document.getElementById('formTitle');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const btnReset = document.getElementById('btnReset');
+        const statusMessage = document.getElementById('statusMessage');
+        const tableBody = document.getElementById('tableBody');
+        const noData = document.getElementById('noData');
+        const searchInput = document.getElementById('searchName');
+        const classFilter = document.getElementById('filterKelas');
+        const editIndexInput = document.getElementById('editIndex');
+
+        // Initial render
+        renderTable();
+
+        // Handle Form Submit (Save or Update)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                nama: document.getElementById('nama').value,
+                kelas: document.getElementById('kelas').value,
+                nis: document.getElementById('nis').value,
+                status: document.getElementById('status').value,
+                catatan: document.getElementById('catatan').value
+            };
+
+            const index = parseInt(editIndexInput.value);
+
+            // Basic Validation
+            if (!formData.nama || !formData.kelas || !formData.nis || !formData.status) {
+                showMessage('Harap lengkapi semua field!', 'error');
+                return;
+            }
+
+            setLoading(true);
+
+            if (index === -1) {
+                // ADD NEW DATA
+                allData.unshift(formData);
+                showMessage('Data baru berhasil disimpan!', 'success');
+            } else {
+                // UPDATE EXISTING DATA
+                allData[index] = formData;
+                showMessage('Data berhasil diperbarui!', 'success');
+                exitEditMode();
+            }
+
+            updateDashboard();
+            form.reset();
+
+            // Send to Google Sheets if URL provided
+            if (SCRIPT_URL) {
+                try {
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        cache: 'no-cache',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ...formData,
+                            action: index === -1 ? 'insert' : 'update' // Info tambahan untuk backend jika diperlukan
+                        })
+                    });
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessage('Gagal sinkronisasi ke Cloud, data hanya tersimpan lokal.', 'error');
+                }
+            }
+            setLoading(false);
+        });
+
+        // Handle Reset / Cancel Edit
+        btnReset.addEventListener('click', () => {
+            if (editIndexInput.value !== "-1") {
+                exitEditMode();
+            }
+            form.reset();
+            statusMessage.classList.add('hidden');
+        });
+
+        // Search & Filter
+        searchInput.addEventListener('input', renderTable);
+        classFilter.addEventListener('change', renderTable);
+
+        function renderTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filterVal = classFilter.value;
+            
+            // Map data dengan original index agar filter tidak merusak index edit
+            const dataWithIndex = allData.map((item, idx) => ({ ...item, originalIndex: idx }));
+
+            const filtered = dataWithIndex.filter(item => {
+                const matchSearch = item.nama.toLowerCase().includes(searchTerm) || item.nis.includes(searchTerm);
+                const matchClass = filterVal === "" || item.kelas === filterVal;
+                return matchSearch && matchClass;
+            });
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = '';
+                noData.classList.remove('hidden');
+            } else {
+                noData.classList.add('hidden');
+                tableBody.innerHTML = filtered.map(item => `
+                    <tr class="hover:bg-blue-50 transition group">
+                        <td class="px-6 py-4">
+                            <div class="font-semibold">${item.nama}</div>
+                            <div class="text-xs text-gray-400 italic lg:hidden">${item.catatan || 'Tidak ada catatan'}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm">${item.kelas}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 font-mono">${item.nis}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${getStatusClass(item.status)}">
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="editData(${item.originalIndex})" class="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-colors flex items-center justify-center mx-auto" title="Edit Data">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                <span class="text-xs font-bold uppercase">Edit</span>
+                            </button>
+                            <div class="hidden lg:block text-[10px] text-gray-400 mt-1 truncate max-w-[100px] mx-auto">${item.catatan || '-'}</div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            updateFilterDropdown();
+        }
+
+        function editData(index) {
+            const data = allData[index];
+            
+            // Fill Form
+            document.getElementById('nama').value = data.nama;
+            document.getElementById('kelas').value = data.kelas;
+            document.getElementById('nis').value = data.nis;
+            document.getElementById('status').value = data.status;
+            document.getElementById('catatan').value = data.catatan || '';
+            editIndexInput.value = index;
+
+            // Change UI to Edit Mode
+            formContainer.classList.add('edit-mode', 'border-yellow-500');
+            formContainer.classList.remove('border-blue-700');
+            formTitle.innerHTML = `
+                <svg class="w-6 h-6 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Edit Data: ${data.nama}
+            `;
+            btnSubmit.textContent = "Perbarui Data";
+            btnSubmit.classList.remove('school-blue');
+            btnSubmit.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+            
+            // Scroll to form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showMessage('Mode Edit Aktif. Silakan ubah data.', 'info');
+        }
+
+        function exitEditMode() {
+            editIndexInput.value = "-1";
+            formContainer.classList.remove('edit-mode', 'border-yellow-500');
+            formContainer.classList.add('border-blue-700');
+            formTitle.innerHTML = `
+                <svg class="w-6 h-6 mr-2 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Input Data Siswa
+            `;
+            btnSubmit.textContent = "Simpan Data";
+            btnSubmit.classList.add('school-blue');
+            btnSubmit.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'Lulus': return 'bg-green-100 text-green-700';
+                case 'Tidak Lulus': return 'bg-red-100 text-red-700';
+                case 'Pending': return 'bg-yellow-100 text-yellow-700';
+                default: return 'bg-gray-100 text-gray-700';
+            }
+        }
+
+        function updateDashboard() {
+            const stats = {
+                lulus: allData.filter(i => i.status === 'Lulus').length,
+                gagal: allData.filter(i => i.status === 'Tidak Lulus').length,
+                pending: allData.filter(i => i.status === 'Pending').length
+            };
+            
+            document.getElementById('statLulus').textContent = stats.lulus;
+            document.getElementById('statGagal').textContent = stats.gagal;
+            document.getElementById('statPending').textContent = stats.pending;
+            
+            renderTable();
+        }
+
+        function updateFilterDropdown() {
+            const classes = [...new Set(allData.map(i => i.kelas))].sort();
+            const current = classFilter.value;
+            classFilter.innerHTML = '<option value="">Semua Kelas</option>' + 
+                classes.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('');
+        }
+
+        function showMessage(msg, type) {
+            statusMessage.textContent = msg;
+            statusMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700', 'bg-blue-100', 'text-blue-700');
+            
+            if (type === 'error') statusMessage.classList.add('bg-red-100', 'text-red-700');
+            else if (type === 'info') statusMessage.classList.add('bg-blue-100', 'text-blue-700');
+            else statusMessage.classList.add('bg-green-100', 'text-green-700');
+            
+            if (type !== 'info') {
+                setTimeout(() => statusMessage.classList.add('hidden'), 5000);
+            }
+        }
+
+        function setLoading(state) {
+            btnSubmit.disabled = state;
+            const originalText = editIndexInput.value === "-1" ? "Simpan Data" : "Perbarui Data";
+            btnSubmit.innerHTML = state ? 
+                '<span class="inline-block animate-spin mr-2">↻</span> Memproses...' : 
+                originalText;
+            btnSubmit.style.opacity = state ? '0.7' : '1';
+        }
+
+        function exportToPDF() {
+            if (allData.length === 0) {
+                alert("Belum ada data untuk diekspor!");
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(18);
+            doc.setTextColor(30, 58, 138);
+            doc.text("Laporan Kelulusan Siswa Kelas XII", 105, 20, { align: "center" });
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            doc.text("Tahun Pelajaran 2026", 105, 28, { align: "center" });
+            const statsLulus = allData.filter(i => i.status === 'Lulus').length;
+            const statsGagal = allData.filter(i => i.status === 'Tidak Lulus').length;
+            const statsPending = allData.filter(i => i.status === 'Pending').length;
+            doc.setDrawColor(200);
+            doc.line(20, 35, 190, 35);
+            doc.setFontSize(10);
+            doc.setTextColor(0);
+            doc.text(`Total Lulus: ${statsLulus} | Tidak Lulus: ${statsGagal} | Pending: ${statsPending}`, 20, 42);
+            const head = [['Nama Siswa', 'Kelas', 'NIS', 'Status', 'Catatan']];
+            const body = allData.map(item => [item.nama, item.kelas, item.nis, item.status, item.catatan || '-']);
+            doc.autoTable({
+                startY: 50,
+                head: head,
+                body: body,
+                headStyles: { fillColor: [30, 58, 138] },
+                margin: { top: 50 }
+            });
+            doc.save("Laporan_Kelulusan_2026.pdf");
+        }
+    </script>
+</body>
+</html>
